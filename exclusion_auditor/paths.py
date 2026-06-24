@@ -46,14 +46,52 @@ def _seg_match(base_seg: str, value_seg: str) -> bool:
     return base_seg == "*" or base_seg == value_seg
 
 
+def _strip_any_volume_prefix(segs: List[str]) -> tuple:
+    """Strip a CrowdStrike-style 'any volume / any path' prefix from a value's
+    segments. Falcon exclusions are commonly written as ``**\\...`` ("match on
+    any volume / any leading path") or as an NT object path
+    ``\\Device\\HarddiskVolume3\\...``. Both mean "the drive/leading path is
+    unspecified", so for containment checks the remainder should be matched
+    against a base regardless of drive. Returns (segments, had_prefix)."""
+    if segs and segs[0] == "**":
+        return segs[1:], True
+    if len(segs) >= 2 and segs[0] == "device" and segs[1].startswith("harddiskvolume"):
+        return segs[2:], True
+    return segs, False
+
+
 def path_is_under(value: str, base: str) -> bool:
-    """True when `value` is at or below `base` (base treated as a path pattern)."""
+    """True when `value` is at or below `base` (base treated as a path pattern).
+
+    Handles CrowdStrike's any-volume value prefixes (``**\\...`` and
+    ``\\Device\\HarddiskVolume*\\...``): when present, the base may match
+    starting anywhere in the remaining value segments and a leading drive
+    segment on the base (e.g. ``c:``) is dropped, since the value's volume is
+    unspecified. Without such a prefix the original drive-anchored behavior is
+    preserved exactly."""
     v = normalize_segments(value)
     b = normalize_segments(base)
     # A trailing "*" on the base is a subtree marker ("everything below"); drop it.
     while b and b[-1] in WILDCARD_CHARS:
         b.pop()
-    if not b or len(v) < len(b):
+    if not b:
+        return False
+
+    v, any_volume = _strip_any_volume_prefix(v)
+    if any_volume:
+        # The value's volume/leading path is unspecified. Drop a leading drive
+        # segment on the base so the concrete tail can align...
+        if b and b[0].endswith(":"):
+            b = b[1:]
+        if not b or not v or len(v) < len(b):
+            return False
+        # ...and allow the base to match starting anywhere in the remainder.
+        for start in range(0, len(v) - len(b) + 1):
+            if all(_seg_match(b[i], v[start + i]) for i in range(len(b))):
+                return True
+        return False
+
+    if len(v) < len(b):
         return False
     return all(_seg_match(b[i], v[i]) for i in range(len(b)))
 
