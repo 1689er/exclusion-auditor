@@ -9,6 +9,10 @@ description = "Read-only NGAV/EDR exclusion risk and hygiene auditor (CrowdStrik
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
+authors = [
+    { name = "Justin Hickman", email = "jch1689@mail.com" },
+]
+keywords = ["security", "edr", "ngav", "crowdstrike", "exclusions", "detection-engineering"]
 dependencies = [
     "PyYAML>=6.0",
 ]

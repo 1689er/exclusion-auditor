@@ -19,6 +19,9 @@ repository. Include:
 - steps to reproduce, and
 - any suggested remediation.
 
+If you cannot use GitHub's private reporting, email the maintainer at
+**jch1689@mail.com** with the same details.
+
 You can expect an initial acknowledgement within a few days. Once a fix is available,
 we'll coordinate disclosure and credit you if you wish.
 

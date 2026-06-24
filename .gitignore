@@ -2,6 +2,23 @@
 config.yaml
 config.local.yaml
 
+# Secrets / credentials — never commit
+.env
+*.env
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+credentials.json
+secrets.*
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
 # Python
 __pycache__/
 *.py[cod]

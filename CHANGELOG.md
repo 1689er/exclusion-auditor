@@ -17,6 +17,3 @@ All notable changes to this project are documented here. The format is based on
 - CLI with `table` / `json` / `markdown` output and a `--ci` gate.
 - Documentation: rule schema, configuration, and adapter guides.
 - Test suite covering engine behavior and CrowdStrike normalization (no creds needed).
-
-[Unreleased]: https://example.com/compare
-[0.1.0]: https://example.com/releases/0.1.0

@@ -134,3 +134,8 @@ pytest -q              # 18 tests: engine behavior + CrowdStrike normalization (
 2. **Tunable from day one.** Suppressions exist in v0.1, or real findings drown in legitimate exclusions.
 3. **Calibrate against a real tenant** before publishing severities.
 4. **Never store credentials.** OAuth2 client creds from env/secret store, nothing on disk.
+
+## Contributing & contact
+Contributions — especially new risk rules — are welcome; see
+[CONTRIBUTING.md](CONTRIBUTING.md). Report security issues privately per
+[SECURITY.md](SECURITY.md). Maintainer: Justin Hickman (jch1689@mail.com).
