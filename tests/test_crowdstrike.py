@@ -96,6 +96,20 @@ def test_ioa_pattern_kind_concrete_vs_wildcard():
     assert cs.ioa_pattern_kind(r"**\Users\Public\(a|b).exe") == "wildcard"
 
 
+def test_ioa_regex_cleans_whitespace_and_literal_metachars():
+    # \s+ (regex whitespace) -> literal space; escaped metacharacters unescaped
+    assert cs.ioa_regex_to_path(r".*\\Program\s+Files\\app\.exe") == r"**\Program Files\app.exe"
+    assert cs.ioa_regex_to_path(r".*\\x\s+\(x86\)\\a\.exe") == r"**\x (x86)\a.exe"
+    assert cs.ioa_regex_to_path(r".*\\u\+v\.exe") == r"**\u+v.exe"
+
+
+def test_ioa_pattern_kind_literal_paren_is_not_wildcard():
+    # a concrete path with a literal parenthesis must classify as process
+    assert cs.ioa_pattern_kind(r"C:\Program Files (x86)\app.exe") == "process"
+    # genuine alternation (|) is still a wildcard
+    assert cs.ioa_pattern_kind(r"C:\x\(a|b).exe") == "wildcard"
+
+
 # --- pagination (read-only) ----------------------------------------------
 
 class FakeService:
