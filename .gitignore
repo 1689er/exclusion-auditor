@@ -2,6 +2,14 @@
 config.yaml
 config.local.yaml
 
+# Confidential audit output — the default (non-sanitized) report contains real
+# exclusion values & admin identities. By convention, write it with a
+# *.confidential.* suffix so it can never be committed by accident. Sanitized
+# --share-out files (e.g. *.sanitized.json) are safe and intentionally NOT ignored.
+*.confidential.json
+*.confidential.md
+*.confidential.txt
+
 # Secrets / credentials — never commit
 .env
 *.env

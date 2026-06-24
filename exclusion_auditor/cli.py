@@ -97,6 +97,11 @@ def main(argv=None) -> int:
     if args.redact:
         print(report.render_sanitized(share, fmt))
     else:
+        # Remind the operator the default report is confidential, so it is not
+        # casually committed or shared. (Use --redact/--share-out to share.)
+        print("NOTE: this report is CONFIDENTIAL - it contains real exclusion "
+              "values and admin identities. Do not commit or share it; use "
+              "--redact or --share-out for a shareable version.", file=sys.stderr)
         print(report.render(findings, fmt, total_exclusions=total))
 
     # 5. CI gate
