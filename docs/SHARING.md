@@ -15,8 +15,19 @@ group names, or tenant IDs. See [ENTERPRISE.md](ENTERPRISE.md) for exactly what 
 ## Generate a sanitized report
 ```bash
 exclusion-auditor --config config.yaml --share-out audit.sanitized.json
+# or share even less — just the aggregate summary:
+exclusion-auditor --config config.yaml --summary-only --format json > summary.json
 ```
-Open the file and confirm it looks like tokens and counts (no real paths) before sharing.
+
+## Verify before you share
+Run the built-in scanner on any file before sending it — it flags paths, identities,
+emails, GUIDs/CIDs, etc., and is encoding-aware (catches UTF-16 reports from PowerShell):
+```bash
+exclusion-auditor --verify-share audit.sanitized.json
+# -> "SAFE: no obvious sensitive content found"   (exit 0)
+#    "UNSAFE: ... do NOT share"                    (exit 1)
+```
+`SAFE` is a heuristic, not a guarantee — still confirm the file came from `--share-out`/`--redact`.
 
 ## Where to share
 | You want to... | Use | Link |

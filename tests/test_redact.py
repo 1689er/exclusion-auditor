@@ -4,10 +4,11 @@ none of the sensitive values present in the source exclusions."""
 import json
 import os
 
+from exclusion_auditor import cli
 from exclusion_auditor.adapters.import_adapter import ImportAdapter
 from exclusion_auditor.datarefs import DataResolver
 from exclusion_auditor.engine import Engine
-from exclusion_auditor.redact import build_share_report
+from exclusion_auditor.redact import build_share_report, load_or_create_salt, scan_for_sensitive
 from exclusion_auditor.rules import load_rules
 from exclusion_auditor.suppressions import load_suppressions
 
@@ -83,3 +84,72 @@ def test_summary_counts_present():
     assert s["findings"] == len(share["findings"])
     assert sum(s["by_severity"].values()) == s["findings"]
     assert "SANITIZED" in share["classification"]
+
+
+# --- safety scanner (issues #2/#3/#7) ------------------------------------
+
+def test_scan_flags_planted_sensitive_content():
+    text = r'path C:\Users\jdoe\secret.exe contact admin@corp.com'
+    hits = dict(scan_for_sensitive(text))
+    assert "windows_path" in hits
+    assert "email_address" in hits
+
+
+def test_sanitized_report_scans_clean():
+    # regression: the share scanner must find nothing in a sanitized report
+    findings, total = _findings()
+    blob = json.dumps(build_share_report(findings, total))
+    assert scan_for_sensitive(blob) == []
+
+
+# --- persistent salt (issue #8) ------------------------------------------
+
+def test_persistent_salt_gives_stable_tokens(tmp_path):
+    findings, total = _findings()
+    salt_path = str(tmp_path / "tokens.salt")
+    s1 = load_or_create_salt(salt_path)
+    s2 = load_or_create_salt(salt_path)   # second call reads the same salt
+    assert s1 == s2
+    t1 = sorted(f["value_token"] for f in build_share_report(findings, total, salt=s1)["findings"])
+    t2 = sorted(f["value_token"] for f in build_share_report(findings, total, salt=s2)["findings"])
+    assert t1 == t2
+
+
+# --- CLI safety features (issues #2/#5) ----------------------------------
+
+def test_cli_summary_only(monkeypatch, capsys):
+    monkeypatch.chdir(ROOT)
+    rc = cli.main(["--config", "examples/demo.yaml", "--summary-only", "--format", "json"])
+    assert rc == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["findings"] == []
+    assert data["summary"]["findings"] > 0
+    assert "SANITIZED" in data["classification"]
+
+
+def test_cli_verify_share_safe(tmp_path):
+    f = tmp_path / "ok.json"
+    f.write_text('{"value_token":"v_abc1234567","scope_class":"global","severity":"low"}')
+    assert cli.main(["--verify-share", str(f)]) == 0
+
+
+def test_cli_verify_share_unsafe(tmp_path):
+    f = tmp_path / "bad.json"
+    f.write_text(r'{"value":"C:\Users\jdoe\payload.exe","created_by":"j.admin"}')
+    assert cli.main(["--verify-share", str(f)]) == 1
+
+
+def test_cli_verify_share_catches_utf16(tmp_path):
+    # PowerShell `>` emits UTF-16; the scanner must still see the sensitive content.
+    f = tmp_path / "bad_utf16.json"
+    f.write_bytes(r'{"value":"C:\Users\jdoe\x.exe"}'.encode("utf-16"))
+    assert cli.main(["--verify-share", str(f)]) == 1
+
+
+def test_cli_share_out_autoverifies(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(ROOT)
+    out = tmp_path / "s.json"
+    rc = cli.main(["--config", "examples/demo.yaml", "--share-out", str(out)])
+    assert rc == 0
+    assert "auto-verified" in capsys.readouterr().err
+    assert scan_for_sensitive(out.read_text()) == []

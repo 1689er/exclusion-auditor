@@ -24,14 +24,25 @@ environment without editing any code.
 | `ci.fail_on` | `critical` | With `--ci`, exit non-zero when any active finding is at/above this severity. |
 
 ## CLI overrides
-`--config` is required. Other flags:
+`--config` is required (except with `--verify-share`). Other flags:
 - `--format table|json|markdown` — override `output.format`.
 - `--min-severity <level>` — override `output.min_severity`.
 - `--ci` — exit non-zero at/above `ci.fail_on`.
+- `--check-scopes` — read-only pre-flight that confirms the configured API client has the
+  required exclusion read scopes (and Host Groups, if name resolution is on), then exits.
+  Run this before a first audit to fail fast on a missing scope.
 - `--redact` — sanitize the output for safe sharing (no values, paths, identities, host
   group names, comments, or tenant IDs). See [ENTERPRISE.md](ENTERPRISE.md).
 - `--share-out PATH` — write a sanitized JSON report to PATH (safe to share externally).
   Can be combined with a normal (confidential) report on stdout.
+- `--summary-only` — sanitized output containing only the aggregate summary (no per-finding
+  rows); the most minimal thing to share.
+- `--salt-file PATH` — use a persistent salt so value tokens stay stable across runs (track
+  the same exclusion over time). Created if missing; keep it private (git-ignored).
+- `--verify-share PATH` — scan a file for likely-sensitive content and report whether it's
+  safe to share, then exit. Run this on anything before you share it.
+
+The default (non-sanitized) report is **CONFIDENTIAL** and is labelled as such.
 
 ## Tuning to your environment (the important part)
 Three layers let you adapt without forking:

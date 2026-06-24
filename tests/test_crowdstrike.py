@@ -62,6 +62,7 @@ def test_normalize_ioa_uses_ifn_regex_and_is_process():
     raw = {
         "id": "i1", "name": "PS automation", "ifn_regex": r".*\\powershell\.exe",
         "cl_regex": ".*-enc.*", "pattern_name": "Suspicious PowerShell",
+        "description": "approved in change CR-12",
         "applied_globally": True, "created_on": "2024-06-01T00:00:00Z",
     }
     n = cs.normalize_ioa(raw)
@@ -71,7 +72,15 @@ def test_normalize_ioa_uses_ifn_regex_and_is_process():
     assert n.pattern_kind == "wildcard"        # leading .* -> ** any-path prefix
     from exclusion_auditor.paths import base_name
     assert base_name(n.value) == "powershell.exe"   # EXCL-PROC-001 can now match
-    assert "PS automation" in n.comment and "cl_regex=" in n.comment
+    # issue #6: comment is the admin description only, not synthesized metadata
+    assert n.comment == "approved in change CR-12"
+
+
+def test_normalize_ioa_without_description_has_empty_comment():
+    # issue #6 regression: undocumented IOA must have empty comment so has_comment
+    # is honest and the hygiene rule can fire.
+    raw = {"id": "i2", "name": "x", "ifn_regex": ".*foo", "applied_globally": True}
+    assert cs.normalize_ioa(raw).comment == ""
 
 
 def test_ioa_regex_to_path_unescapes_and_globs():

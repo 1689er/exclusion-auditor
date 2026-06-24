@@ -2,6 +2,14 @@
 config.yaml
 config.local.yaml
 
+# Audit output — the full report is CONFIDENTIAL; never commit it
+*CONFIDENTIAL*
+*.full.json
+audit.full*
+# Persistent token salt enables value correlation — keep private
+*.salt
+salt.txt
+
 # Secrets / credentials — never commit
 .env
 *.env
