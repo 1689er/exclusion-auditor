@@ -55,8 +55,15 @@ def redact_finding(f: Finding, salt: bytes) -> dict:
 
 
 def build_share_report(findings: List[Finding], total_exclusions: int,
-                       salt: Optional[bytes] = None) -> dict:
-    """A fully sanitized, shareable report: aggregate summary + redacted findings."""
+                       salt: Optional[bytes] = None,
+                       summary_only: bool = False) -> dict:
+    """A fully sanitized, shareable report: aggregate summary + redacted findings.
+
+    When ``summary_only`` is True the per-finding rows are omitted entirely and
+    only the aggregate summary (counts by severity/rule/category) is returned -
+    the lowest-risk contribution shape for environments whose data-handling
+    policy balks even at per-finding hashed tokens.
+    """
     salt = salt or secrets.token_bytes(16)
     active = [f for f in findings if not f.suppressed]
     redacted = [redact_finding(f, salt) for f in sort_findings(active)]
@@ -65,8 +72,16 @@ def build_share_report(findings: List[Finding], total_exclusions: int,
     by_rule = Counter(r["rule_id"] for r in redacted)
     by_cat = Counter(r["category"] for r in redacted)
 
+    classification = CLASSIFICATION
+    if summary_only:
+        classification = (
+            "SANITIZED (summary only) - safe to share. Aggregate counts only; "
+            "no per-finding rows, values, paths, identities, host group names, "
+            "comments, or tenant IDs."
+        )
+
     return {
-        "classification": CLASSIFICATION,
+        "classification": classification,
         "generated_by": f"exclusion-auditor {__version__}",
         "summary": {
             "exclusions_scanned": total_exclusions,
@@ -77,5 +92,5 @@ def build_share_report(findings: List[Finding], total_exclusions: int,
             "by_rule": dict(by_rule.most_common()),
             "by_category": dict(by_cat.most_common()),
         },
-        "findings": redacted,
+        "findings": [] if summary_only else redacted,
     }

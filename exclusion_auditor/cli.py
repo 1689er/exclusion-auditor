@@ -40,6 +40,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="sanitize output for safe sharing (no values, paths, identities, or tenant IDs)")
     p.add_argument("--share-out", metavar="PATH",
                    help="write a sanitized JSON report to PATH (safe to share externally)")
+    p.add_argument("--summary-only", action="store_true",
+                   help="with --redact/--share-out, emit aggregate counts only (no per-finding rows)")
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return p
 
@@ -83,7 +85,7 @@ def main(argv=None) -> int:
     share = None
     if args.redact or args.share_out:
         from .redact import build_share_report
-        share = build_share_report(findings, total)  # one salt shared by file + stdout
+        share = build_share_report(findings, total, summary_only=args.summary_only)  # one salt shared by file + stdout
 
     if args.share_out:
         try:
