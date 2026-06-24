@@ -56,6 +56,9 @@ def ioa_regex_to_path(regex: str) -> str:
         s = s[:-1]
     s = s.replace("\\\\", "\x00")   # protect literal backslash
     s = s.replace("\\.", ".")        # unescape dot
+    s = re.sub(r"\\s\+?", " ", s)    # \s / \s+ (whitespace) -> literal space
+    for ch in "()[]{}+$-,&'":         # unescape literal-escaped metacharacters
+        s = s.replace("\\" + ch, ch)
     s = re.sub(r"^\.\*", "**", s)     # leading any-path prefix -> **
     s = s.replace(".*", "*").replace(".+", "*")
     s = s.replace("\x00", "\\")
@@ -65,7 +68,7 @@ def ioa_regex_to_path(regex: str) -> str:
 def ioa_pattern_kind(value: str) -> str:
     """process when the (normalized) IOA value is a concrete image path;
     wildcard when it still carries glob/alternation that an attacker could satisfy."""
-    return "wildcard" if any(c in value for c in ("*", "?", "(", "|")) else "process"
+    return "wildcard" if any(c in value for c in ("*", "?", "|")) else "process"
 
 
 # --- pure normalization ---------------------------------------------------
