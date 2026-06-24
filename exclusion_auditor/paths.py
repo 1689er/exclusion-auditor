@@ -132,11 +132,7 @@ def wildcard_depth(value: str) -> int:
     exclusion. Genuinely broad shapes keep an early wildcard after the prefix
     (e.g. ``\\Device\\HarddiskVolume*\\Users\\*\\...\\**\\*`` -> depth 1).
     """
-    segs = normalize_segments(value, expand_env=False)
-    if segs and segs[0] == "**":
-        segs = segs[1:]
-    elif len(segs) >= 2 and segs[0] == "device" and segs[1].startswith("harddiskvolume"):
-        segs = segs[2:]
+    segs, _ = _strip_any_volume_prefix(normalize_segments(value, expand_env=False))
     for idx, seg in enumerate(segs):
         if any(c in seg for c in WILDCARD_CHARS):
             return idx
