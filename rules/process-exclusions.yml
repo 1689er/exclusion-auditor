@@ -1,0 +1,47 @@
+# Process / IOA-style exclusions: these suppress behavioral and ML inspection for a
+# running process, which is broader and riskier than a static file exclusion.
+
+- id: EXCL-PROC-001
+  name: Script interpreter or LOLBin excluded from behavioral inspection
+  severity: high
+  category: process
+  mitre: T1562.001
+  applies_to_types: ["process", "ioa", "ml"]
+  description: >
+    A process exclusion targets a script interpreter, shell, or signed proxy-execution
+    binary (powershell.exe, wscript.exe, rundll32.exe, ...).
+  rationale: >
+    Excluding an interpreter from behavioral/IOA inspection blinds the sensor to the exact
+    layer where living-off-the-land attacks operate. The binary is "trusted", so the
+    exclusion looks harmless, but it disables detection of malicious *use* of that binary.
+  match:
+    process_name_in: ref:interpreters
+  remediation: >
+    Remove the process exclusion. If a specific automation script trips a false positive,
+    exclude that script by full path/hash, or build a tuned IOA exclusion scoped to the
+    exact command line rather than the whole interpreter.
+  references:
+    - https://www.falconpy.io/Service-Collections/IOA-Exclusions.html
+    - https://lolbas-project.github.io/
+
+- id: EXCL-PROC-002
+  name: Process exclusion uses a wildcard or writable path
+  severity: high
+  category: process
+  mitre: T1562.001
+  applies_to_types: ["process", "ioa"]
+  description: >
+    A process exclusion is defined by an image path that contains a wildcard or resides
+    in a user-writable directory.
+  rationale: >
+    If the excluded process is identified by a path an attacker can write to (or a wildcard
+    they can satisfy), they can place their own binary there and inherit the exclusion.
+  match:
+    any_of:
+      - path_under: ref:writable-paths
+      - pattern_kind_in: ["wildcard"]
+  remediation: >
+    Pin the process exclusion to an immutable location and, where supported, a signer or
+    hash. Avoid wildcards in process image paths.
+  references:
+    - https://www.falconpy.io/Service-Collections/IOA-Exclusions.html

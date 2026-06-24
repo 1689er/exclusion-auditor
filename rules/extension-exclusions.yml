@@ -1,0 +1,81 @@
+# Extension-based exclusions.
+# These are the most dangerous class: a single line can blind the sensor to an entire
+# file type everywhere it appears.
+
+- id: EXCL-EXT-001
+  name: Executable or script extension excluded
+  severity: critical
+  category: extension
+  mitre: T1562.001
+  applies_to_types: ["extension", "ml", "path"]
+  description: >
+    An exclusion covers a directly executable or scriptable file extension
+    (e.g. .exe, .dll, .ps1). Any malware of that type is ignored wherever it lands.
+  rationale: >
+    Extension exclusions are not scoped to a path — they apply globally to every matching
+    file on every host the policy covers. Excluding .exe/.dll/.ps1 effectively turns off
+    detection for the formats attackers use most. There is virtually no legitimate reason
+    to exclude an executable extension; legitimate app issues should be solved with a
+    narrow path or hash exclusion instead.
+  match:
+    extension_in:
+      - exe
+      - dll
+      - sys
+      - scr
+      - com
+      - ps1
+      - psm1
+      - vbs
+      - vbe
+      - js
+      - jse
+      - bat
+      - cmd
+      - hta
+      - wsf
+      - wsh
+      - jar
+      - msi
+      - msc
+      - cpl
+  remediation: >
+    Remove the extension exclusion. If a specific signed binary is causing a false positive,
+    replace it with a hash exclusion or a narrow full-path exclusion to that one file.
+  references:
+    - https://learn.microsoft.com/en-us/defender-endpoint/configure-extension-file-exclusions-microsoft-defender-antivirus
+    - https://attack.mitre.org/techniques/T1562/001/
+
+- id: EXCL-EXT-002
+  name: Macro-enabled or archive extension excluded
+  severity: high
+  category: extension
+  mitre: T1562.001
+  applies_to_types: ["extension", "ml", "path"]
+  description: >
+    An exclusion covers a macro-enabled Office document or an archive/container
+    extension (e.g. .docm, .xlsm, .zip, .iso).
+  rationale: >
+    Macro-enabled documents and archive/container formats (ISO, IMG, ZIP, 7z) are primary
+    malware delivery vehicles. Excluding them removes inspection of the initial-access stage.
+  match:
+    extension_in:
+      - docm
+      - xlsm
+      - pptm
+      - dotm
+      - xltm
+      - zip
+      - 7z
+      - rar
+      - iso
+      - img
+      - vhd
+      - vhdx
+      - cab
+      - lnk
+  remediation: >
+    Remove the exclusion. If a business application legitimately produces one of these files
+    in a known location, scope the exclusion to that specific path, not the extension.
+  references:
+    - https://attack.mitre.org/techniques/T1562/001/

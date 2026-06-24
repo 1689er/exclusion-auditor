@@ -1,0 +1,62 @@
+[
+  {
+    "id": "demo-001",
+    "platform": "import",
+    "tenant_cid": "DEMO",
+    "type": "extension",
+    "value": "*.ps1",
+    "pattern_kind": "extension",
+    "scope": "global",
+    "created_by": "legacy-import",
+    "created_at": "2021-03-02T10:00:00Z",
+    "comment": ""
+  },
+  {
+    "id": "demo-002",
+    "platform": "import",
+    "tenant_cid": "DEMO",
+    "type": "ml",
+    "value": "C:\\Users\\*\\AppData\\Local\\Temp",
+    "pattern_kind": "path",
+    "scope": "host_group:Workstations",
+    "created_by": "j.admin",
+    "created_at": "2025-11-10T14:22:00Z",
+    "comment": "Vendor agent writes temp files here"
+  },
+  {
+    "id": "demo-003",
+    "platform": "import",
+    "tenant_cid": "DEMO",
+    "type": "ml",
+    "value": "C:\\*",
+    "pattern_kind": "wildcard",
+    "scope": "global",
+    "created_by": "unknown",
+    "created_at": "2020-06-01T09:00:00Z",
+    "comment": ""
+  },
+  {
+    "id": "demo-004",
+    "platform": "import",
+    "tenant_cid": "DEMO",
+    "type": "ioa",
+    "value": "powershell.exe",
+    "pattern_kind": "process",
+    "scope": "global",
+    "created_by": "automation-team",
+    "created_at": "2023-01-15T08:00:00Z",
+    "comment": "Patch automation runs PS scripts"
+  },
+  {
+    "id": "demo-005",
+    "platform": "import",
+    "tenant_cid": "DEMO",
+    "type": "path",
+    "value": "C:\\Program Files\\LineOfBusinessApp\\service.exe",
+    "pattern_kind": "path",
+    "scope": "host_group:AppServers",
+    "created_by": "j.admin",
+    "created_at": "2026-02-01T11:30:00Z",
+    "comment": "Signed LOB service, FP on update; ticket SEC-1042, review 2026-08"
+  }
+]

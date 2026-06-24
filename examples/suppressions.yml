@@ -1,0 +1,14 @@
+# Suppressions silence a finding you have reviewed and accepted.
+# A suppression MUST carry a reason. Suppressed findings are still listed (under a
+# "suppressed" section) so they never vanish silently and can be re-reviewed.
+suppressions:
+  - rule_id: EXCL-PATH-002
+    value: 'C:\Users\*\AppData\Local\Temp'   # exact value, or use value_regex
+    reason: >
+      Accepted risk for vendor agent (demo-002). Compensated by app-control on
+      Workstations group. Owner j.admin. Re-review 2026-09-01.
+    expires: 2026-09-01
+
+  - rule_id: EXCL-HYG-001
+    value_regex: '^C:\\Program Files\\LineOfBusinessApp\\.*'
+    reason: Owner and ticket already tracked in CMDB for this app's exclusions.

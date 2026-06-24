@@ -1,0 +1,29 @@
+# Directories any standard (non-admin) user can write to.
+# An exclusion that covers one of these lets an attacker drop and run a payload
+# from a location the EDR will ignore. Paths are normalized before matching:
+#   - environment variables (%TEMP%, %TMP%, %APPDATA%, %LOCALAPPDATA%, %PUBLIC%) are expanded
+#   - per-user paths use the wildcard segment for the username
+# Grow this list via PR. Keep entries as broad base paths; the engine matches "value is under base".
+entries:
+  - 'C:\Windows\Temp'
+  - 'C:\Temp'
+  - 'C:\Tmp'
+  - 'C:\PerfLogs'
+  - 'C:\Users\Public'
+  - 'C:\Users\*\AppData\Local\Temp'
+  - 'C:\Users\*\AppData\Local'
+  - 'C:\Users\*\AppData\Roaming'
+  - 'C:\Users\*\Downloads'
+  - 'C:\Users\*\Documents'
+  - 'C:\Users\*\Desktop'
+  - 'C:\ProgramData'
+  - '%TEMP%'
+  - '%TMP%'
+  - '%APPDATA%'
+  - '%LOCALAPPDATA%'
+  - '%PUBLIC%'
+  # Linux / macOS (Falcon sensor runs cross-platform; exclusions can too)
+  - '/tmp'
+  - '/var/tmp'
+  - '/dev/shm'
+  - '/home/*/Downloads'

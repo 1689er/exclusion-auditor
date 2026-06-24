@@ -1,0 +1,23 @@
+# Zero-credential demo config. Run from the project root:
+#   exclusion-auditor --config examples/demo.yaml
+# or, without installing:
+#   python -m exclusion_auditor.cli --config examples/demo.yaml
+adapter: import
+
+import:
+  path: examples/sample-exclusions.json
+
+rules:
+  paths:
+    - rules            # bundled rules; add your own dir here to extend/override
+
+data_dir: data         # writable-paths.yml, interpreters.yml, lolbins.yml live here
+
+suppressions: examples/suppressions.yml
+
+output:
+  format: table        # table | json | markdown
+  min_severity: info
+
+ci:
+  fail_on: critical    # `--ci` exits non-zero at/above this severity

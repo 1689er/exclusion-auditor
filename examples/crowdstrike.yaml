@@ -1,0 +1,36 @@
+# CrowdStrike Falcon config (READ-ONLY).
+# Copy to config.yaml (git-ignored) and adjust. Run:
+#   $env:FALCON_CLIENT_ID="...";  $env:FALCON_CLIENT_SECRET="..."   # PowerShell
+#   exclusion-auditor --config config.yaml
+#
+# The API client (Falcon console > Support and resources > API clients & keys)
+# needs READ scope on: ML Exclusions, IOA Exclusions, Sensor Visibility Exclusions.
+# See docs/ADAPTERS.md for the exact steps.
+adapter: crowdstrike
+
+crowdstrike:
+  cloud: us-1                       # us-1 | us-2 | eu-1 | us-gov-1 | us-gov-2
+  # base_url: https://api.crowdstrike.com   # optional: overrides `cloud`
+  client_id_env: FALCON_CLIENT_ID         # NAME of the env var holding the id
+  client_secret_env: FALCON_CLIENT_SECRET # secrets are NEVER stored in this file
+  exclusion_types: [ml, ioa, sensor_visibility]
+  member_cids: []                   # optional: child CIDs for Flight Control/MSSP
+  resolve_group_names: true         # turn host group IDs into names (needs Host Groups: Read)
+
+rules:
+  paths:
+    - rules
+    # - ./my-rules                  # your environment-specific rules (override by id)
+
+data_dir: data
+# data_overrides:                   # extend the bundled lists for your environment
+#   writable-paths: ./my-writable-paths.yml
+
+suppressions: ./suppressions.yml    # your reviewed-and-accepted exclusions
+
+output:
+  format: table
+  min_severity: low
+
+ci:
+  fail_on: critical

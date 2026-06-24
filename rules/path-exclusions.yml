@@ -1,0 +1,94 @@
+# Path-based exclusions: the most common and most quietly dangerous class.
+
+- id: EXCL-PATH-001
+  name: Root or near-root path excluded
+  severity: critical
+  category: path
+  mitre: T1562.001
+  applies_to_types: ["path", "ml", "sensor_visibility"]
+  description: >
+    An exclusion covers a drive root or a top-level directory (e.g. C:\, C:\Windows,
+    C:\Users, C:\*), removing inspection from an enormous portion of the filesystem.
+  rationale: >
+    A near-root exclusion is functionally equivalent to disabling protection on that host.
+    Attackers do not need to find the excluded folder — almost everything is excluded.
+  match:
+    any_of:
+      - value_regex: '^[a-zA-Z]:\\?\*?$'                 # C:\  or  C:\*  or  C:
+      - value_regex: '^[a-zA-Z]:\\(Windows|Users|Program Files( \(x86\))?|ProgramData)\\?\*?$'
+      - wildcard_at_depth_lte: 1
+  remediation: >
+    Delete this exclusion immediately and rebuild it as a narrow path to the specific
+    file or subfolder that requires it. Verify on affected hosts what was actually needed.
+  references:
+    - https://dazzyddos.github.io/posts/Abusing_Exclusions_To_Evade_Detection/
+    - https://attack.mitre.org/techniques/T1562/001/
+
+- id: EXCL-PATH-002
+  name: User-writable directory excluded
+  severity: high
+  category: path
+  mitre: T1562.001
+  applies_to_types: ["path", "ml", "sensor_visibility"]
+  description: >
+    An exclusion covers a directory that any standard user can write to
+    (Temp, AppData, Downloads, ProgramData, Public, /tmp, ...).
+  rationale: >
+    Writable-directory exclusions are the single easiest exclusion to abuse: an attacker
+    with only user-level access drops a payload into the excluded folder and executes it
+    with no inspection. No privilege escalation required.
+  match:
+    path_under: ref:writable-paths
+  remediation: >
+    Remove the exclusion. If an application must be excluded here, scope it to a specific
+    file (full path or hash) rather than the whole writable directory, and document why.
+  references:
+    - https://dazzyddos.github.io/posts/Abusing_Exclusions_To_Evade_Detection/
+    - https://support.huntress.io/hc/en-us/articles/4404005108371-Exclusions-for-Managed-Microsoft-Defender-Antivirus
+
+- id: EXCL-PATH-003
+  name: Wildcard inside an otherwise specific path
+  severity: medium
+  category: path
+  mitre: T1562.001
+  applies_to_types: ["path", "ml", "sensor_visibility"]
+  description: >
+    The exclusion path contains a wildcard segment (e.g. C:\Apps\*\logs,
+    C:\vendor\*.exe) below the top level.
+  rationale: >
+    Wildcards widen an exclusion beyond what the author likely intended and create
+    attacker-controllable matches (e.g. a wildcard username or version segment lets an
+    attacker create a matching folder). Lower severity than a writable or root exclusion,
+    but still worth review — many wildcards can be replaced with an exact path.
+  match:
+    all_of:
+      - pattern_kind_in: ["wildcard"]
+      - not:
+          wildcard_at_depth_lte: 1   # depth<=1 already caught as critical by EXCL-PATH-001
+  remediation: >
+    Replace the wildcard with the explicit path(s) it was meant to cover, if practical.
+    If the wildcard is unavoidable (e.g. per-user path), pair it with a hash or filename
+    constraint and confirm an attacker cannot create a matching directory.
+  references:
+    - https://learn.microsoft.com/en-us/defender-endpoint/configure-extension-file-exclusions-microsoft-defender-antivirus
+
+- id: EXCL-PATH-004
+  name: Exclusion overlaps a sensitive system or LOLBin location
+  severity: high
+  category: path
+  mitre: T1562.001
+  applies_to_types: ["path", "ml", "sensor_visibility"]
+  description: >
+    The excluded directory contains, or sits above, a known living-off-the-land binary
+    location (e.g. C:\Windows\System32, ...\WindowsPowerShell\v1.0).
+  rationale: >
+    Excluding a directory that holds signed-but-abusable binaries lets an attacker run
+    those binaries (and stage tools beside them) without behavioral inspection.
+  match:
+    overlaps_known_path: ref:lolbins
+  remediation: >
+    Never exclude system binary directories. Remove the exclusion and solve the underlying
+    false positive with a hash exclusion for the specific signed file involved.
+  references:
+    - https://lolbas-project.github.io/
+    - https://attack.mitre.org/techniques/T1562/001/

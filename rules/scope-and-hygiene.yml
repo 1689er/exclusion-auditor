@@ -1,0 +1,83 @@
+# Scope and hygiene rules.
+# Scope rules ESCALATE the severity of other findings rather than standing alone.
+# Hygiene rules are low-severity governance findings — individually minor, collectively
+# the reason exclusion lists rot.
+
+- id: EXCL-SCOPE-001
+  name: Risky exclusion applied at global scope
+  severity: medium
+  category: scope
+  mitre: T1562.001
+  applies_to_types: ["*"]
+  escalates: true            # engine: if another finding exists on this exclusion, raise it one level
+  description: >
+    The exclusion is applied to all hosts (global / all host groups) rather than scoped to
+    the specific systems that need it.
+  rationale: >
+    Blast radius. A questionable exclusion scoped to three build servers is a small risk;
+    the same exclusion applied fleet-wide is a systemic one. Global scope multiplies the
+    impact of every other weakness in the exclusion.
+  match:
+    scope_equals: global
+  remediation: >
+    Scope the exclusion to the smallest host group that requires it. If it genuinely must
+    be global, document the justification and review it on a fixed cadence.
+  references:
+    - https://www.falconpy.io/Service-Collections/Sensor-Visibility-Exclusions.html
+
+- id: EXCL-HYG-001
+  name: Exclusion has no description or owner
+  severity: low
+  category: hygiene
+  applies_to_types: ["*"]
+  description: >
+    The exclusion has an empty comment/description field, so there is no record of why it
+    exists or who is accountable for it.
+  rationale: >
+    Undocumented exclusions can never be safely removed — nobody knows what breaks if they
+    go. They accumulate forever and are indistinguishable from a malicious exclusion an
+    attacker added. A required justification is the cheapest control with the highest payoff.
+  match:
+    field_empty: comment
+  remediation: >
+    Add a description capturing the reason, the requesting owner, and a review date.
+    Consider enforcing non-empty descriptions as policy.
+  references:
+    - https://attack.mitre.org/techniques/T1562/001/
+
+- id: EXCL-HYG-002
+  name: Stale exclusion
+  severity: low
+  category: hygiene
+  applies_to_types: ["*"]
+  requires: metadata
+  description: >
+    The exclusion was created over a year ago and has not been modified since.
+  rationale: >
+    The application or false positive that justified an old exclusion may be long gone,
+    but the security gap remains. Stale exclusions are prime candidates for removal and a
+    common hiding place once an attacker learns one exists.
+  match:
+    age_days_gte: 365
+  remediation: >
+    Re-validate whether the exclusion is still needed. If the original driver is gone,
+    remove it. Otherwise refresh the description and review date.
+
+- id: EXCL-HYG-003
+  name: Duplicate or overlapping exclusion
+  severity: info
+  category: hygiene
+  applies_to_types: ["*"]
+  requires: corpus
+  description: >
+    Another exclusion already covers this value, or this exclusion is a subset of a broader
+    one.
+  rationale: >
+    Redundancy makes the list harder to reason about and hides the truly broad exclusion
+    that matters. Consolidating shrinks the attack surface you have to audit.
+  match:
+    # Evaluated by the engine across the full exclusion set, not a single record.
+    # Placeholder marker; the engine computes overlap and emits this finding.
+    value_regex: '.*'
+  remediation: >
+    Collapse overlapping exclusions into the single narrowest entry that covers the real need.

@@ -1,0 +1,25 @@
+# Known living-off-the-land binary locations and the binaries themselves.
+# Used by EXCL-PATH-004 (directory overlaps one of these) and as a reference set for
+# process exclusions. This is a STARTER list — the authoritative, continuously updated
+# catalog is the LOLBAS project. Grow `binaries` and `directories` via PR.
+# Reference: https://lolbas-project.github.io/
+directories:
+  - 'C:\Windows\System32'
+  - 'C:\Windows\SysWOW64'
+  - 'C:\Windows\System32\WindowsPowerShell\v1.0'
+  - 'C:\Windows\Microsoft.NET\Framework'
+  - 'C:\Windows\Microsoft.NET\Framework64'
+
+binaries:
+  - powershell.exe
+  - rundll32.exe
+  - regsvr32.exe
+  - mshta.exe
+  - certutil.exe
+  - bitsadmin.exe
+  - wmic.exe
+  - msbuild.exe
+  - installutil.exe
+  - cmstp.exe
+  - msiexec.exe
+  - forfiles.exe

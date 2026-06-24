@@ -1,0 +1,32 @@
+# Script interpreters, shells, and signed binaries that can proxy execution (LOLBins).
+# Excluding one of these from ML/behavioral inspection is almost never justified and
+# blinds the sensor to the most common living-off-the-land execution paths.
+# Source of truth for the broader LOLBin set: https://lolbas-project.github.io/
+entries:
+  - powershell.exe
+  - powershell_ise.exe
+  - pwsh.exe
+  - cmd.exe
+  - wscript.exe
+  - cscript.exe
+  - mshta.exe
+  - rundll32.exe
+  - regsvr32.exe
+  - regsvcs.exe
+  - regasm.exe
+  - installutil.exe
+  - msbuild.exe
+  - wmic.exe
+  - certutil.exe
+  - bitsadmin.exe
+  - msiexec.exe
+  - cmstp.exe
+  - forfiles.exe
+  - python.exe
+  - node.exe
+  - java.exe
+  # cross-platform shells
+  - bash
+  - sh
+  - zsh
+  - python3

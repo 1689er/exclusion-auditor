@@ -1,0 +1,14 @@
+# User-owned config may reference local paths / secrets — never commit it.
+config.yaml
+config.local.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
