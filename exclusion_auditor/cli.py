@@ -36,6 +36,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="override minimum severity to report")
     p.add_argument("--ci", action="store_true",
                    help="exit non-zero if any finding is at/above the ci.fail_on severity")
+    p.add_argument("--check-scopes", action="store_true",
+                   help="read-only probe that the API client has the required exclusion read scopes, then exit")
     p.add_argument("--redact", action="store_true",
                    help="sanitize output for safe sharing (no values, paths, identities, or tenant IDs)")
     p.add_argument("--share-out", metavar="PATH",
@@ -103,6 +105,11 @@ def main(argv=None) -> int:
         return 2
     cfg = Config.load(args.config)
 
+    # Read-only pre-flight: confirm the API client has the required read scopes.
+    if args.check_scopes:
+        from .precheck import run as run_precheck
+        return run_precheck(args.config)
+
     fmt = args.format or cfg.output_format
     min_sev = args.min_severity or cfg.min_severity
 
@@ -140,13 +147,23 @@ def main(argv=None) -> int:
             share["findings"] = []
 
     if args.share_out:
+        payload = json.dumps(share, indent=2)
         try:
             with open(args.share_out, "w", encoding="utf-8") as fh:
-                json.dump(share, fh, indent=2)
-            print(f"wrote sanitized report to {args.share_out}", file=sys.stderr)
+                fh.write(payload)
         except OSError as exc:
             print(f"error: could not write sanitized report: {exc}", file=sys.stderr)
             return 2
+        # Auto-verify the file we just wrote is actually safe to share.
+        from .redact import scan_for_sensitive
+        leaks = scan_for_sensitive(payload)
+        if leaks:
+            print(f"DANGER: {args.share_out} unexpectedly contains sensitive-looking "
+                  f"content ({leaks[0][0]}) - do NOT share. Please report this as a bug.",
+                  file=sys.stderr)
+            return 2
+        print(f"wrote sanitized report to {args.share_out} (auto-verified: safe to share)",
+              file=sys.stderr)
 
     if args.redact or args.summary_only:
         print(report.render_sanitized(share, fmt))

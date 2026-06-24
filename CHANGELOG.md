@@ -6,6 +6,9 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 ### Added
+- `--check-scopes` — read-only pre-flight that the Falcon API client has the required
+  exclusion read scopes, before running a full audit. (#4)
+- `--share-out` now auto-verifies the file it writes is safe to share.
 - Report now separates **Risk findings** (critical/high/medium) from a compact **Hygiene**
   section so low-severity governance noise no longer buries real findings.
 - `--verify-share PATH` — scan a file for likely-sensitive content before sharing

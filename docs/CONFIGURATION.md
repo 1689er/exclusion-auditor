@@ -28,6 +28,9 @@ environment without editing any code.
 - `--format table|json|markdown` — override `output.format`.
 - `--min-severity <level>` — override `output.min_severity`.
 - `--ci` — exit non-zero at/above `ci.fail_on`.
+- `--check-scopes` — read-only pre-flight that confirms the configured API client has the
+  required exclusion read scopes (and Host Groups, if name resolution is on), then exits.
+  Run this before a first audit to fail fast on a missing scope.
 - `--redact` — sanitize the output for safe sharing (no values, paths, identities, host
   group names, comments, or tenant IDs). See [ENTERPRISE.md](ENTERPRISE.md).
 - `--share-out PATH` — write a sanitized JSON report to PATH (safe to share externally).
