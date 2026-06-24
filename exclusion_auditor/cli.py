@@ -29,7 +29,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="exclusion-auditor",
         description="Read-only NGAV/EDR exclusion risk and hygiene auditor.",
     )
-    p.add_argument("-c", "--config", required=True, help="path to config YAML")
+    p.add_argument("-c", "--config", help="path to config YAML (required unless --verify-share)")
     p.add_argument("--format", choices=["table", "json", "markdown"],
                    help="override output format")
     p.add_argument("--min-severity", choices=["info", "low", "medium", "high", "critical"],
@@ -40,6 +40,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="sanitize output for safe sharing (no values, paths, identities, or tenant IDs)")
     p.add_argument("--share-out", metavar="PATH",
                    help="write a sanitized JSON report to PATH (safe to share externally)")
+    p.add_argument("--verify-share", metavar="PATH",
+                   help="verify an existing sanitized report is safe to share, then exit")
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return p
 
@@ -52,6 +54,24 @@ def main(argv=None) -> int:
         pass
 
     args = build_parser().parse_args(argv)
+
+    # Standalone mode: verify an existing sanitized report and exit (no config,
+    # no tenant access needed).
+    if args.verify_share:
+        from .verify_share import render_result, verify_doc
+        try:
+            with open(args.verify_share, "r", encoding="utf-8") as fh:
+                doc = json.load(fh)
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"error: could not read {args.verify_share}: {exc}", file=sys.stderr)
+            return 2
+        ok, issues = verify_doc(doc)
+        print(render_result(args.verify_share, ok, issues, doc))
+        return 0 if ok else 1
+
+    if not args.config:
+        print("error: --config is required (or use --verify-share PATH)", file=sys.stderr)
+        return 2
     cfg = Config.load(args.config)
 
     fmt = args.format or cfg.output_format
@@ -93,6 +113,16 @@ def main(argv=None) -> int:
         except OSError as exc:
             print(f"error: could not write sanitized report: {exc}", file=sys.stderr)
             return 2
+        # Self-verify the file we just wrote so users get an explicit safe-to-share signal.
+        from .verify_share import verify_doc
+        ok, issues = verify_doc(share)
+        if ok:
+            print("verified: sanitized report is safe to share.", file=sys.stderr)
+        else:
+            print(f"WARNING: sanitized report failed {len(issues)} safety check(s):",
+                  file=sys.stderr)
+            for it in issues:
+                print(f"  - {it}", file=sys.stderr)
 
     if args.redact:
         print(report.render_sanitized(share, fmt))

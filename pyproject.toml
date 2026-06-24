@@ -30,6 +30,7 @@ Changelog = "https://github.com/1689er/exclusion-auditor/blob/main/CHANGELOG.md"
 
 [project.scripts]
 exclusion-auditor = "exclusion_auditor.cli:main"
+exclusion-auditor-verify = "exclusion_auditor.verify_share:main"
 
 [tool.setuptools]
 packages = ["exclusion_auditor", "exclusion_auditor.adapters"]
