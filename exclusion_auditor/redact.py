@@ -34,6 +34,34 @@ def _token(salt: bytes, value: str) -> str:
     return "v_" + digest.hexdigest()[:10]
 
 
+def load_or_create_salt(path: str) -> bytes:
+    """Return a STABLE salt persisted at ``path``, creating it on first use.
+
+    The per-run random salt (the default) deliberately prevents correlating
+    tokens across separate reports. A persisted salt is the opt-in opposite: it
+    keeps tokens for the same exclusion value STABLE across periodic reports so a
+    team can track a given exclusion over time. The salt is secret-equivalent
+    (anyone holding it can correlate your reports) so it must be kept private and
+    never committed - hence the *.salt gitignore convention.
+    """
+    import os
+
+    if os.path.exists(path):
+        with open(path, "rb") as fh:
+            salt = fh.read().strip()
+        if not salt:
+            raise ValueError(f"salt file {path!r} is empty; delete it to regenerate")
+        return salt
+    salt = secrets.token_bytes(32)
+    # Write restrictively where the OS supports it (best-effort on Windows).
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    try:
+        os.write(fd, salt)
+    finally:
+        os.close(fd)
+    return salt
+
+
 def redact_finding(f: Finding, salt: bytes) -> dict:
     """Keep only non-identifying, analytically-useful fields."""
     return {

@@ -40,6 +40,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="sanitize output for safe sharing (no values, paths, identities, or tenant IDs)")
     p.add_argument("--share-out", metavar="PATH",
                    help="write a sanitized JSON report to PATH (safe to share externally)")
+    p.add_argument("--salt-file", metavar="PATH",
+                   help="use/persist a stable redaction salt at PATH so value tokens stay "
+                        "consistent across reports (keep it SECRET; default is a fresh per-run salt)")
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return p
 
@@ -82,8 +85,15 @@ def main(argv=None) -> int:
     total = len(exclusions)
     share = None
     if args.redact or args.share_out:
-        from .redact import build_share_report
-        share = build_share_report(findings, total)  # one salt shared by file + stdout
+        from .redact import build_share_report, load_or_create_salt
+        salt = None
+        if args.salt_file:
+            try:
+                salt = load_or_create_salt(args.salt_file)
+            except (OSError, ValueError) as exc:
+                print(f"error: could not use salt file: {exc}", file=sys.stderr)
+                return 2
+        share = build_share_report(findings, total, salt=salt)  # one salt shared by file + stdout
 
     if args.share_out:
         try:

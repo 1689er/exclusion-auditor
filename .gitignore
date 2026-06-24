@@ -9,6 +9,7 @@ config.local.yaml
 *.key
 *.p12
 *.pfx
+*.salt
 id_rsa*
 credentials.json
 secrets.*
