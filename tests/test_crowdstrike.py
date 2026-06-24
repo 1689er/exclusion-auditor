@@ -62,13 +62,30 @@ def test_normalize_ioa_uses_ifn_regex_and_is_process():
     raw = {
         "id": "i1", "name": "PS automation", "ifn_regex": r".*\\powershell\.exe",
         "cl_regex": ".*-enc.*", "pattern_name": "Suspicious PowerShell",
+        "description": "Allow signed deploy script (ticket SEC-1042)",
         "applied_globally": True, "created_on": "2024-06-01T00:00:00Z",
     }
     n = cs.normalize_ioa(raw)
     assert n.type == "ioa"
     assert n.pattern_kind == "process"
     assert n.value == r".*\\powershell\.exe"
-    assert "PS automation" in n.comment and "cl_regex=" in n.comment
+    # comment reflects the admin-authored description only...
+    assert n.comment == "Allow signed deploy script (ticket SEC-1042)"
+    # ...never the structural name/pattern/cl_regex metadata.
+    assert "PS automation" not in n.comment
+    assert "cl_regex" not in n.comment
+
+
+def test_normalize_ioa_without_description_has_empty_comment():
+    # No admin description => empty comment, so EXCL-HYG-001 (field_empty: comment)
+    # correctly fires for undocumented IOA exclusions instead of being suppressed.
+    raw = {
+        "id": "i2", "name": "PS automation", "ifn_regex": r".*\\powershell\.exe",
+        "cl_regex": ".*-enc.*", "pattern_name": "Suspicious PowerShell",
+        "applied_globally": True, "created_on": "2024-06-01T00:00:00Z",
+    }
+    n = cs.normalize_ioa(raw)
+    assert n.comment == ""
 
 
 # --- pagination (read-only) ----------------------------------------------
