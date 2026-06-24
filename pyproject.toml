@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "exclusion-auditor"
-version = "0.1.0"
+version = "0.1.1"
 description = "Read-only NGAV/EDR exclusion risk and hygiene auditor (CrowdStrike-first, vendor-agnostic)."
 readme = "README.md"
 requires-python = ">=3.9"
