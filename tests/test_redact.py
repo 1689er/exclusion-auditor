@@ -144,3 +144,12 @@ def test_cli_verify_share_catches_utf16(tmp_path):
     f = tmp_path / "bad_utf16.json"
     f.write_bytes(r'{"value":"C:\Users\jdoe\x.exe"}'.encode("utf-16"))
     assert cli.main(["--verify-share", str(f)]) == 1
+
+
+def test_cli_share_out_autoverifies(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(ROOT)
+    out = tmp_path / "s.json"
+    rc = cli.main(["--config", "examples/demo.yaml", "--share-out", str(out)])
+    assert rc == 0
+    assert "auto-verified" in capsys.readouterr().err
+    assert scan_for_sensitive(out.read_text()) == []
