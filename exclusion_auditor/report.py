@@ -35,9 +35,25 @@ def render(findings: List[Finding], fmt: str, total_exclusions: int) -> str:
 
 # --- table ---------------------------------------------------------------
 
+def _render_finding_detail(lines, f):
+    flag = " *escalated*" if f.escalated else ""
+    lines.append(f"  [{SEV_LABEL[f.severity]}] {f.rule_id}  {f.rule_name}{flag}")
+    lines.append(f"         exclusion : {f.exclusion.value}  ({f.exclusion.type}, scope={f.exclusion.scope})")
+    if f.mitre:
+        lines.append(f"         mitre     : {f.mitre}")
+    if f.escalation_note:
+        lines.append(f"         note      : {f.escalation_note}")
+    lines.append(f"         fix       : {f.remediation.strip()}")
+    lines.append("")
+
+
 def _render_table(findings, total_exclusions) -> str:
     active = sort_findings(_active(findings))
     suppressed = _suppressed(findings)
+    # Separate genuine risk from low-severity hygiene so the signal isn't buried.
+    risk = [f for f in active if f.category != "hygiene"]
+    hygiene = [f for f in active if f.category == "hygiene"]
+
     lines = []
     lines.append("=" * 78)
     lines.append("  EXCLUSION AUDIT REPORT")
@@ -52,23 +68,33 @@ def _render_table(findings, total_exclusions) -> str:
         f"{SEV_LABEL[s].strip()}:{counts.get(s, 0)}"
         for s in ["critical", "high", "medium", "low", "info"]
     )
-    lines.append(f"  Exclusions scanned: {total_exclusions}    Findings: {len(active)}")
+    lines.append(f"  Exclusions scanned: {total_exclusions}    Findings: {len(active)}"
+                 f"   (Risk: {len(risk)}  Hygiene: {len(hygiene)})")
     lines.append(f"  {summary}")
     if suppressed:
         lines.append(f"  (+{len(suppressed)} suppressed)")
     lines.append("-" * 78)
 
-    if not active:
-        lines.append("  No findings. ")
-    for f in active:
-        flag = " *escalated*" if f.escalated else ""
-        lines.append(f"  [{SEV_LABEL[f.severity]}] {f.rule_id}  {f.rule_name}{flag}")
-        lines.append(f"         exclusion : {f.exclusion.value}  ({f.exclusion.type}, scope={f.exclusion.scope})")
-        if f.mitre:
-            lines.append(f"         mitre     : {f.mitre}")
-        if f.escalation_note:
-            lines.append(f"         note      : {f.escalation_note}")
-        lines.append(f"         fix       : {f.remediation.strip()}")
+    # Risk findings: full detail.
+    lines.append(f"  RISK FINDINGS ({len(risk)})")
+    lines.append("")
+    if not risk:
+        lines.append("  none")
+        lines.append("")
+    for f in risk:
+        _render_finding_detail(lines, f)
+
+    # Hygiene: compact counts (full detail available via --format json).
+    if hygiene:
+        lines.append("-" * 78)
+        lines.append(f"  HYGIENE ({len(hygiene)}) - low-severity governance; compact view "
+                     "(use --format json for full detail)")
+        grouped = {}
+        for f in hygiene:
+            entry = grouped.setdefault(f.rule_id, [f.rule_name, 0])
+            entry[1] += 1
+        for rid, (name, cnt) in sorted(grouped.items(), key=lambda kv: -kv[1][1]):
+            lines.append(f"    {cnt:>5}  {rid}  {name}")
         lines.append("")
 
     if suppressed:

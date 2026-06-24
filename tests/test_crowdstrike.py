@@ -62,13 +62,22 @@ def test_normalize_ioa_uses_ifn_regex_and_is_process():
     raw = {
         "id": "i1", "name": "PS automation", "ifn_regex": r".*\\powershell\.exe",
         "cl_regex": ".*-enc.*", "pattern_name": "Suspicious PowerShell",
+        "description": "approved in change CR-12",
         "applied_globally": True, "created_on": "2024-06-01T00:00:00Z",
     }
     n = cs.normalize_ioa(raw)
     assert n.type == "ioa"
     assert n.pattern_kind == "process"
     assert n.value == r".*\\powershell\.exe"
-    assert "PS automation" in n.comment and "cl_regex=" in n.comment
+    # issue #6: comment is the admin description only, not synthesized metadata
+    assert n.comment == "approved in change CR-12"
+
+
+def test_normalize_ioa_without_description_has_empty_comment():
+    # issue #6 regression: undocumented IOA must have empty comment so has_comment
+    # is honest and the hygiene rule can fire.
+    raw = {"id": "i2", "name": "x", "ifn_regex": ".*foo", "applied_globally": True}
+    assert cs.normalize_ioa(raw).comment == ""
 
 
 # --- pagination (read-only) ----------------------------------------------

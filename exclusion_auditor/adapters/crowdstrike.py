@@ -100,14 +100,12 @@ def normalize_sensor_visibility(raw: dict, tenant_cid: str = "",
 
 def normalize_ioa(raw: dict, tenant_cid: str = "",
                   group_names: Optional[Dict[str, str]] = None) -> NormalizedExclusion:
-    # IOA exclusions are behavioral. The meaningful "what does it exclude" field
-    # is the image-file-name regex; cl_regex/name/pattern carry extra context.
+    # IOA exclusions are behavioral; the image-file-name regex is the value.
     value = raw.get("ifn_regex") or raw.get("value", "") or ""
-    context = [
-        raw.get("name", ""),
-        f"pattern={raw.get('pattern_name', '')}" if raw.get("pattern_name") else "",
-        f"cl_regex={raw.get('cl_regex')}" if raw.get("cl_regex") else "",
-    ]
+    # Map ONLY the admin-provided description to comment, so `has_comment` reflects
+    # real documentation rather than always-present rule metadata (issue #6). Falcon
+    # IOA uses "description"; fall back to "comment".
+    comment = raw.get("description") or raw.get("comment") or ""
     return NormalizedExclusion(
         id=str(raw.get("id", "")),
         platform="crowdstrike",
@@ -118,7 +116,7 @@ def normalize_ioa(raw: dict, tenant_cid: str = "",
         tenant_cid=tenant_cid,
         created_by=raw.get("created_by", "") or "",
         created_at=raw.get("created_on", "") or "",
-        comment="; ".join(c for c in context if c),
+        comment=comment,
     )
 
 

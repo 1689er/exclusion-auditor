@@ -6,6 +6,19 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 ### Added
+- Report now separates **Risk findings** (critical/high/medium) from a compact **Hygiene**
+  section so low-severity governance noise no longer buries real findings.
+- `--verify-share PATH` — scan a file for likely-sensitive content before sharing
+  (encoding-aware, catches UTF-16). (#2, #7)
+- `--summary-only` — sanitized output with only the aggregate summary. (#5)
+- `--salt-file PATH` — persistent salt for stable value tokens across runs. (#8)
+- Confidential-output guards: `.gitignore` patterns for full reports and salt files. (#7)
+
+### Fixed
+- IOA exclusions no longer always report `has_comment=true` (comment now maps to the admin
+  description only), so the hygiene rule can fire on undocumented IOA exclusions. (#6)
+
+### Added (earlier in cycle)
 - **Sanitized/shareable reports** for enterprise use: `--redact` (sanitized stdout) and
   `--share-out PATH` (sanitized JSON file). Strips exclusion values, paths, admin
   identities, comments, host group names, and tenant IDs; replaces each value with a

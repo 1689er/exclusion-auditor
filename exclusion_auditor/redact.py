@@ -15,9 +15,11 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import os
+import re
 import secrets
 from collections import Counter
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from . import __version__
 from .engine import sort_findings
@@ -32,6 +34,48 @@ CLASSIFICATION = (
 def _token(salt: bytes, value: str) -> str:
     digest = hmac.new(salt, (value or "").strip().lower().encode("utf-8"), hashlib.sha256)
     return "v_" + digest.hexdigest()[:10]
+
+
+def load_or_create_salt(path: str) -> bytes:
+    """Read a persistent salt (hex) from `path`, creating it if missing.
+
+    A persistent salt makes value tokens stable across runs so findings can be
+    tracked over time (issue #8). The salt enables correlation, so keep it private
+    (it's git-ignored by default) — but it never reveals the underlying values.
+    """
+    if os.path.isfile(path):
+        with open(path, "r", encoding="utf-8") as fh:
+            return bytes.fromhex(fh.read().strip())
+    salt = secrets.token_bytes(16)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(salt.hex())
+    return salt
+
+
+# Patterns that should NEVER appear in a shareable report. Used by `--verify-share`
+# to catch accidental sharing of raw/confidential output (issues #2, #7).
+_SENSITIVE_PATTERNS = [
+    ("windows_path", re.compile(r"[A-Za-z]:\\")),
+    ("unc_path", re.compile(r"\\\\[A-Za-z0-9_.$-]+\\")),
+    ("user_profile_path", re.compile(r"[Uu]sers[\\/][^\\/\"\s]+")),
+    ("email_address", re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")),
+    ("guid", re.compile(r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+                        r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b")),
+    ("long_hex_32", re.compile(r"\b[0-9a-f]{32}\b")),
+    ("created_by_field", re.compile(r'"created_by"\s*:')),
+]
+
+
+def scan_for_sensitive(text: str) -> List[Tuple[str, str]]:
+    """Return (pattern_name, sample) for each sensitive pattern found in `text`.
+    Empty list => no obvious sensitive content (safe to share)."""
+    hits = []
+    for name, rx in _SENSITIVE_PATTERNS:
+        m = rx.search(text)
+        if m:
+            sample = m.group(0)
+            hits.append((name, sample[:40] + ("..." if len(sample) > 40 else "")))
+    return hits
 
 
 def redact_finding(f: Finding, salt: bytes) -> dict:
