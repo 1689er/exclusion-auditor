@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format is based on
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Security
+- Pinned GitHub Actions to commit SHAs (supply-chain hardening).
+- Added a CodeQL static-analysis workflow.
 
 ## [0.1.0] - 2026-06-24
 ### Added
