@@ -41,6 +41,8 @@ def _render_table(findings, total_exclusions) -> str:
     lines = []
     lines.append("=" * 78)
     lines.append("  EXCLUSION AUDIT REPORT")
+    lines.append("  CONFIDENTIAL - contains exclusion values & admin identities.")
+    lines.append("  Use --redact or --share-out to produce a shareable version.")
     lines.append("=" * 78)
 
     counts = {}
@@ -146,3 +148,60 @@ def max_severity(findings: List[Finding]) -> str:
     if not active:
         return "info"
     return max(active, key=lambda f: severity_rank(f.severity)).severity
+
+
+# --- sanitized (shareable) rendering -------------------------------------
+
+def render_sanitized(share: dict, fmt: str) -> str:
+    if fmt == "json":
+        return json.dumps(share, indent=2)
+    if fmt == "markdown":
+        return _render_sanitized_markdown(share)
+    return _render_sanitized_table(share)
+
+
+def _sev_summary_line(by_severity: dict) -> str:
+    return "  ".join(
+        f"{SEV_LABEL[s].strip()}:{by_severity.get(s, 0)}"
+        for s in ["critical", "high", "medium", "low", "info"]
+    )
+
+
+def _render_sanitized_table(share: dict) -> str:
+    s = share["summary"]
+    lines = []
+    lines.append("=" * 78)
+    lines.append("  EXCLUSION AUDIT REPORT - SANITIZED (safe to share)")
+    lines.append("=" * 78)
+    lines.append("  " + share["classification"])
+    lines.append(f"  Exclusions scanned: {s['exclusions_scanned']}    "
+                 f"Findings: {s['findings']}    Suppressed: {s['suppressed']}")
+    lines.append("  " + _sev_summary_line(s["by_severity"]))
+    lines.append("-" * 78)
+    lines.append("  SEV   RULE          TYPE / PATTERN        SCOPE    VALUE TOKEN")
+    for f in share["findings"]:
+        flag = "*" if f["escalated"] else " "
+        lines.append(
+            "  {sev:<5}{flag} {rule:<13} {tp:<21} {scope:<8} {tok}".format(
+                sev=SEV_LABEL[f["severity"]].strip(), flag=flag, rule=f["rule_id"],
+                tp=f'{f["type"]}/{f["pattern_kind"]}', scope=f["scope_class"],
+                tok=f["value_token"],
+            )
+        )
+    lines.append("=" * 78)
+    return "\n".join(lines)
+
+
+def _render_sanitized_markdown(share: dict) -> str:
+    s = share["summary"]
+    out = ["# Exclusion Audit Report — SANITIZED", "", f"> {share['classification']}", ""]
+    out.append(f"- Exclusions scanned: **{s['exclusions_scanned']}**")
+    out.append(f"- Findings: **{s['findings']}**  (suppressed: {s['suppressed']})")
+    out.append("")
+    out.append("| Severity | Rule | Type/Pattern | Scope | Value token |")
+    out.append("|----------|------|--------------|-------|-------------|")
+    for f in share["findings"]:
+        sev = f["severity"].upper() + ("*" if f["escalated"] else "")
+        out.append(f"| {sev} | {f['rule_id']} | {f['type']}/{f['pattern_kind']} | "
+                   f"{f['scope_class']} | `{f['value_token']}` |")
+    return "\n".join(out)

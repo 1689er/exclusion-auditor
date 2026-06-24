@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from typing import List
 
@@ -35,6 +36,10 @@ def build_parser() -> argparse.ArgumentParser:
                    help="override minimum severity to report")
     p.add_argument("--ci", action="store_true",
                    help="exit non-zero if any finding is at/above the ci.fail_on severity")
+    p.add_argument("--redact", action="store_true",
+                   help="sanitize output for safe sharing (no values, paths, identities, or tenant IDs)")
+    p.add_argument("--share-out", metavar="PATH",
+                   help="write a sanitized JSON report to PATH (safe to share externally)")
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return p
 
@@ -74,7 +79,25 @@ def main(argv=None) -> int:
     findings = _filter_min_severity(findings, min_sev)
 
     # 4. report
-    print(report.render(findings, fmt, total_exclusions=len(exclusions)))
+    total = len(exclusions)
+    share = None
+    if args.redact or args.share_out:
+        from .redact import build_share_report
+        share = build_share_report(findings, total)  # one salt shared by file + stdout
+
+    if args.share_out:
+        try:
+            with open(args.share_out, "w", encoding="utf-8") as fh:
+                json.dump(share, fh, indent=2)
+            print(f"wrote sanitized report to {args.share_out}", file=sys.stderr)
+        except OSError as exc:
+            print(f"error: could not write sanitized report: {exc}", file=sys.stderr)
+            return 2
+
+    if args.redact:
+        print(report.render_sanitized(share, fmt))
+    else:
+        print(report.render(findings, fmt, total_exclusions=total))
 
     # 5. CI gate
     if args.ci:

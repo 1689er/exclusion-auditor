@@ -5,6 +5,15 @@ All notable changes to this project are documented here. The format is based on
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- **Sanitized/shareable reports** for enterprise use: `--redact` (sanitized stdout) and
+  `--share-out PATH` (sanitized JSON file). Strips exclusion values, paths, admin
+  identities, comments, host group names, and tenant IDs; replaces each value with a
+  per-run hashed token so correlation survives but values can't be recovered.
+- `docs/ENTERPRISE.md` documenting security posture and safe-sharing workflow.
+- `project.urls` metadata (homepage, repository, issues, changelog).
+- Default reports now labelled CONFIDENTIAL to prevent accidental sharing.
+
 ### Security
 - Pinned GitHub Actions to commit SHAs (supply-chain hardening).
 - Added a CodeQL static-analysis workflow.

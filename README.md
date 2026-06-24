@@ -135,6 +135,20 @@ pytest -q              # 18 tests: engine behavior + CrowdStrike normalization (
 3. **Calibrate against a real tenant** before publishing severities.
 4. **Never store credentials.** OAuth2 client creds from env/secret store, nothing on disk.
 
+## Enterprise use & safe sharing
+Built to run inside enterprises against production tenants: **read-only**, **no telemetry
+or third-party egress** (only your configured vendor API), credentials from the
+environment only. The default report is **confidential** (contains real values + admin
+identities); to share findings safely, generate a **sanitized** report that strips values,
+paths, identities, host group names, comments, and tenant IDs:
+
+```bash
+exclusion-auditor --config config.yaml --share-out audit.sanitized.json   # safe to share
+exclusion-auditor --config config.yaml --redact --format markdown         # sanitized to stdout
+```
+Each value becomes a per-run hashed token, so correlation survives but the value can't be
+recovered. Full details: [docs/ENTERPRISE.md](docs/ENTERPRISE.md).
+
 ## Contributing & contact
 Contributions — especially new risk rules — are welcome; see
 [CONTRIBUTING.md](CONTRIBUTING.md). Report security issues privately per

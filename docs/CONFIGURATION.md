@@ -24,8 +24,14 @@ environment without editing any code.
 | `ci.fail_on` | `critical` | With `--ci`, exit non-zero when any active finding is at/above this severity. |
 
 ## CLI overrides
-`--format`, `--min-severity`, and `--ci` override the config at runtime. `--config`
-is required.
+`--config` is required. Other flags:
+- `--format table|json|markdown` — override `output.format`.
+- `--min-severity <level>` — override `output.min_severity`.
+- `--ci` — exit non-zero at/above `ci.fail_on`.
+- `--redact` — sanitize the output for safe sharing (no values, paths, identities, host
+  group names, comments, or tenant IDs). See [ENTERPRISE.md](ENTERPRISE.md).
+- `--share-out PATH` — write a sanitized JSON report to PATH (safe to share externally).
+  Can be combined with a normal (confidential) report on stdout.
 
 ## Tuning to your environment (the important part)
 Three layers let you adapt without forking:
