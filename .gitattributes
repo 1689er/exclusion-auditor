@@ -1,0 +1,8 @@
+# Normalize all text files to LF in the repo (consistent across OSes and CI).
+* text=auto eol=lf
+
+# Treat these as binary (never normalize)
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
