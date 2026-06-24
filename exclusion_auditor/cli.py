@@ -36,6 +36,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="override minimum severity to report")
     p.add_argument("--ci", action="store_true",
                    help="exit non-zero if any finding is at/above the ci.fail_on severity")
+    p.add_argument("--check-scopes", action="store_true",
+                   help="read-only probe that the configured API client has the required "
+                        "exclusion read scopes, then exit (no full audit)")
     p.add_argument("--redact", action="store_true",
                    help="sanitize output for safe sharing (no values, paths, identities, or tenant IDs)")
     p.add_argument("--share-out", metavar="PATH",
@@ -53,6 +56,12 @@ def main(argv=None) -> int:
 
     args = build_parser().parse_args(argv)
     cfg = Config.load(args.config)
+
+    # Pre-flight: verify the API client can READ the exclusion collections,
+    # without pulling the full inventory. Useful to fail fast on a missing scope.
+    if args.check_scopes:
+        from .precheck import run as run_precheck
+        return run_precheck(args.config)
 
     fmt = args.format or cfg.output_format
     min_sev = args.min_severity or cfg.min_severity
