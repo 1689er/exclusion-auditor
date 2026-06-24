@@ -17,6 +17,7 @@ Design notes:
 from __future__ import annotations
 
 import os
+import re
 import sys
 from typing import Callable, Dict, List, Optional
 
@@ -34,6 +35,37 @@ CLOUD_URLS = {
 
 VALID_TYPES = ("ml", "sensor_visibility", "ioa")
 _WILDCARD = ("*", "?")
+
+
+def ioa_regex_to_path(regex: str) -> str:
+    """Convert a Falcon IOA image-filename REGEX into a comparable glob path.
+
+    IOA exclusions store the excluded image as a regex (e.g.
+    ``.*\\\\powershell\\.exe``), not a path. Left raw, the process matchers see
+    a base name of ``.exe`` and a pattern_kind that never reflects the regex, so
+    EXCL-PROC-001/002 can never fire on IOA exclusions. This maps the regex back
+    to a path-shaped value: unescape ``\\.`` and ``\\\\``, turn a leading ``.*``
+    (any-path prefix) into ``**`` so path_is_under can anchor it, and turn any
+    remaining ``.*`` / ``.+`` into ``*``. Alternation groups ``(a|b)`` are left
+    intact (they still read as a wildcard segment).
+    """
+    s = (regex or "").strip()
+    if s.startswith("^"):
+        s = s[1:]
+    if s.endswith("$"):
+        s = s[:-1]
+    s = s.replace("\\\\", "\x00")   # protect literal backslash
+    s = s.replace("\\.", ".")        # unescape dot
+    s = re.sub(r"^\.\*", "**", s)     # leading any-path prefix -> **
+    s = s.replace(".*", "*").replace(".+", "*")
+    s = s.replace("\x00", "\\")
+    return s
+
+
+def ioa_pattern_kind(value: str) -> str:
+    """process when the (normalized) IOA value is a concrete image path;
+    wildcard when it still carries glob/alternation that an attacker could satisfy."""
+    return "wildcard" if any(c in value for c in ("*", "?", "(", "|")) else "process"
 
 
 # --- pure normalization ---------------------------------------------------
@@ -101,8 +133,10 @@ def normalize_sensor_visibility(raw: dict, tenant_cid: str = "",
 def normalize_ioa(raw: dict, tenant_cid: str = "",
                   group_names: Optional[Dict[str, str]] = None) -> NormalizedExclusion:
     # IOA exclusions are behavioral. The meaningful "what does it exclude" field
-    # is the image-file-name regex; cl_regex/name/pattern carry extra context.
-    value = raw.get("ifn_regex") or raw.get("value", "") or ""
+    # is the image-file-name regex; normalize it to a comparable path so the
+    # process matchers (EXCL-PROC-001/002) can actually evaluate it.
+    raw_value = raw.get("ifn_regex") or raw.get("value", "") or ""
+    value = ioa_regex_to_path(raw_value)
     context = [
         raw.get("name", ""),
         f"pattern={raw.get('pattern_name', '')}" if raw.get("pattern_name") else "",
@@ -113,7 +147,7 @@ def normalize_ioa(raw: dict, tenant_cid: str = "",
         platform="crowdstrike",
         type="ioa",
         value=value,
-        pattern_kind="process",
+        pattern_kind=ioa_pattern_kind(value),
         scope=_scope(raw, group_names),
         tenant_cid=tenant_cid,
         created_by=raw.get("created_by", "") or "",

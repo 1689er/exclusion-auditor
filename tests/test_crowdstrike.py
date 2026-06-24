@@ -66,9 +66,25 @@ def test_normalize_ioa_uses_ifn_regex_and_is_process():
     }
     n = cs.normalize_ioa(raw)
     assert n.type == "ioa"
-    assert n.pattern_kind == "process"
-    assert n.value == r".*\\powershell\.exe"
+    # IOA regex is normalized to a comparable glob path so process rules can match
+    assert n.value == r"**\powershell.exe"
+    assert n.pattern_kind == "wildcard"        # leading .* -> ** any-path prefix
+    from exclusion_auditor.paths import base_name
+    assert base_name(n.value) == "powershell.exe"   # EXCL-PROC-001 can now match
     assert "PS automation" in n.comment and "cl_regex=" in n.comment
+
+
+def test_ioa_regex_to_path_unescapes_and_globs():
+    assert cs.ioa_regex_to_path(r".*\\Program Files\\Vendor\\app\.exe") == r"**\Program Files\Vendor\app.exe"
+    assert cs.ioa_regex_to_path(r"^.*\\Windows\\Temp\\x\.exe$") == r"**\Windows\Temp\x.exe"
+    # alternation groups are preserved as a wildcard segment
+    assert cs.ioa_regex_to_path(r".*\\Users\\Public\\(a|b)\.exe") == r"**\Users\Public\(a|b).exe"
+
+
+def test_ioa_pattern_kind_concrete_vs_wildcard():
+    assert cs.ioa_pattern_kind(r"C:\Windows\System32\x.exe") == "process"
+    assert cs.ioa_pattern_kind(r"**\powershell.exe") == "wildcard"
+    assert cs.ioa_pattern_kind(r"**\Users\Public\(a|b).exe") == "wildcard"
 
 
 # --- pagination (read-only) ----------------------------------------------
