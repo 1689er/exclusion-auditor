@@ -5,45 +5,42 @@ All notable changes to this project are documented here. The format is based on
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Added
-- `--check-scopes` — read-only pre-flight that the Falcon API client has the required
-  exclusion read scopes, before running a full audit. (#4)
-- `--share-out` now auto-verifies the file it writes is safe to share.
-- Report now separates **Risk findings** (critical/high/medium) from a compact **Hygiene**
-  section so low-severity governance noise no longer buries real findings.
-- `--verify-share PATH` — scan a file for likely-sensitive content before sharing
-  (encoding-aware, catches UTF-16). (#2, #7)
-- `--summary-only` — sanitized output with only the aggregate summary. (#5)
-- `--salt-file PATH` — persistent salt for stable value tokens across runs. (#8)
-- Confidential-output guards: `.gitignore` patterns for full reports and salt files. (#7)
-
-### Fixed
-- IOA exclusions no longer always report `has_comment=true` (comment now maps to the admin
-  description only), so the hygiene rule can fire on undocumented IOA exclusions. (#6)
-
-### Added (earlier in cycle)
-- **Sanitized/shareable reports** for enterprise use: `--redact` (sanitized stdout) and
-  `--share-out PATH` (sanitized JSON file). Strips exclusion values, paths, admin
-  identities, comments, host group names, and tenant IDs; replaces each value with a
-  per-run hashed token so correlation survives but values can't be recovered.
-- `docs/ENTERPRISE.md` documenting security posture and safe-sharing workflow.
-- Community feedback path: GitHub Discussions enabled, `docs/SHARING.md` safe-sharing
-  guide, and issue templates updated to request sanitized (`--share-out`) reports only.
-- `project.urls` metadata (homepage, repository, issues, changelog).
-- Default reports now labelled CONFIDENTIAL to prevent accidental sharing.
-
-### Security
-- Pinned GitHub Actions to commit SHAs (supply-chain hardening).
-- Added a CodeQL static-analysis workflow.
 
 ## [0.1.0] - 2026-06-24
+First public release.
+
 ### Added
-- Vendor-agnostic risk engine for EDR/NGAV exclusions with a YAML rule library
+- Vendor-agnostic risk engine for EDR/NGAV exclusions: a YAML rule library
   (extension, path, process, scope, and hygiene rules), data-driven `ref:` lists
   (writable paths, interpreters, LOLBins), scope-based escalation, and suppressions.
 - **CrowdStrike Falcon adapter** (read-only): ML, IOA, and Sensor Visibility
   exclusions via FalconPy, with pagination and host-group name resolution.
-- **Import adapter**: audit exclusions exported to JSON or CSV (any vendor, no creds).
-- CLI with `table` / `json` / `markdown` output and a `--ci` gate.
-- Documentation: rule schema, configuration, and adapter guides.
-- Test suite covering engine behavior and CrowdStrike normalization (no creds needed).
+- **Import adapter**: audit exclusions exported to JSON or CSV — any vendor, no credentials.
+- CLI with `table` / `json` / `markdown` output, a `--ci` gate, and `--check-scopes`
+  read-only scope pre-flight.
+- Report separates **Risk findings** (critical/high/medium) from a compact **Hygiene**
+  section so low-severity governance noise never buries real findings.
+- **Enterprise-safe sharing**: `--redact`, `--share-out` (auto-verified), `--summary-only`,
+  `--salt-file`, and `--verify-share` (encoding-aware). Sanitized output strips exclusion
+  values, paths, admin identities, comments, host-group names, and tenant IDs, replacing
+  each value with a per-run hashed token so correlation survives but values can't be recovered.
+- Confidential-output guards (`.gitignore` patterns; full reports labelled CONFIDENTIAL).
+- Documentation: rule schema, configuration, adapters, enterprise/data-handling, and
+  safe-sharing guides.
+- Community: GitHub Discussions plus issue/PR templates that request sanitized reports only.
+- Test suite (engine + CrowdStrike normalization; no credentials needed), CI across
+  Python 3.9–3.12, and a CodeQL workflow.
+
+### Security
+- Read-only by design — adapters only ever read exclusions; credentials come from the
+  environment and are never written to disk.
+- GitHub Actions pinned to commit SHAs; CodeQL static analysis on every commit.
+
+### Calibration
+Validated against a real production CrowdStrike tenant, which surfaced and fixed real
+matcher gaps:
+- `path_is_under` now handles CrowdStrike any-volume value prefixes (`**\…` and
+  `\Device\HarddiskVolume*\…`), so writable-path and LOLBin rules fire on real Falcon values.
+- IOA regex values are normalized to comparable paths, so the process rules
+  (EXCL-PROC-001/002) evaluate IOA exclusions instead of silently skipping them.
+- EXCL-PATH-001 no longer mis-scores an any-volume prefix as a drive-root critical.
