@@ -147,7 +147,8 @@ exclusion-auditor --config config.yaml --share-out audit.sanitized.json   # safe
 exclusion-auditor --config config.yaml --redact --format markdown         # sanitized to stdout
 ```
 Each value becomes a per-run hashed token, so correlation survives but the value can't be
-recovered. Full details: [docs/ENTERPRISE.md](docs/ENTERPRISE.md).
+recovered. Full details: [docs/ENTERPRISE.md](docs/ENTERPRISE.md). To contribute sanitized
+results back for rule tuning (via Issues or Discussions), see [docs/SHARING.md](docs/SHARING.md).
 
 ## Contributing & contact
 Contributions — especially new risk rules — are welcome; see

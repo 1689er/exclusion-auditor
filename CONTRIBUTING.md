@@ -43,6 +43,10 @@ False positives are first-class bugs here. Open an issue with the **shape** of t
 exclusion that was wrongly flagged (sanitize real values) and which rule fired. Use
 the *False positive* issue template.
 
+**Only ever share sanitized data** — attach a report produced with `--share-out`, never
+the default/full report. See [docs/SHARING.md](docs/SHARING.md) for the safe-sharing guide
+(and use **Discussions** for aggregate sanitized reports / tuning).
+
 ## Adding an adapter
 See the "Writing a new adapter" section in [docs/ADAPTERS.md](docs/ADAPTERS.md). Keep
 normalization in pure functions so it unit-tests without credentials, and register

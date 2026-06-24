@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
-  - name: Security vulnerability
-    url: https://github.com/security/advisories
-    about: Please report vulnerabilities privately via GitHub Security Advisories, not as a public issue. See SECURITY.md.
+  - name: Report a security vulnerability (private)
+    url: https://github.com/1689er/exclusion-auditor/security/advisories/new
+    about: Please report vulnerabilities privately here, not as a public issue. See SECURITY.md.
+  - name: Share sanitized audit results / tuning
+    url: https://github.com/1689er/exclusion-auditor/discussions
+    about: "Share --share-out (sanitized) reports to help tune rules. NEVER post the default/full report - it is confidential. See docs/SHARING.md."

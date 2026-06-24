@@ -11,6 +11,8 @@ All notable changes to this project are documented here. The format is based on
   identities, comments, host group names, and tenant IDs; replaces each value with a
   per-run hashed token so correlation survives but values can't be recovered.
 - `docs/ENTERPRISE.md` documenting security posture and safe-sharing workflow.
+- Community feedback path: GitHub Discussions enabled, `docs/SHARING.md` safe-sharing
+  guide, and issue templates updated to request sanitized (`--share-out`) reports only.
 - `project.urls` metadata (homepage, repository, issues, changelog).
 - Default reports now labelled CONFIDENTIAL to prevent accidental sharing.
 
