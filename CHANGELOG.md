@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format is based on
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Security
+- `--check-scopes` no longer prints any credential-derived value (resolves a CodeQL
+  clear-text-logging alert); it now shows only which env var supplied the credential.
 
 ## [0.1.0] - 2026-06-24
 First public release.

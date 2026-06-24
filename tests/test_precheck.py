@@ -16,13 +16,6 @@ def test_classify_states():
     assert precheck._classify({"status_code": 500, "body": {}})[0] == "ERROR"
 
 
-def test_mask_hides_most_of_client_id():
-    masked = precheck._mask("abcdef0123456789")
-    assert masked == "abcdef..."
-    assert "0123456789" not in masked
-    assert precheck._mask("") == "****"
-
-
 def test_run_skips_non_crowdstrike(capsys):
     rc = precheck.run(os.path.join(ROOT, "examples", "demo.yaml"))
     assert rc == 0

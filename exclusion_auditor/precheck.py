@@ -41,11 +41,6 @@ _TYPE_LABEL = {
 _SYMBOL = {"OK": "[ OK ]", "MISSING": "[FAIL]", "AUTH": "[FAIL]", "ERROR": "[FAIL]"}
 
 
-def _mask(value: str) -> str:
-    """Mask the client id so it isn't fully exposed in shared output/screenshots."""
-    return (value[:6] + "...") if value and len(value) > 6 else "****"
-
-
 def _classify(resp: dict) -> Tuple[str, str]:
     """Map a FalconPy response dict to (state, detail)."""
     status = resp.get("status_code", 0)
@@ -87,10 +82,12 @@ def run(config_path: str) -> int:
     probe_cid: Optional[str] = member_cids[0]
 
     cloud = cfg.adapter_opts.get("cloud", "us-1")
+    id_env = cfg.adapter_opts.get("client_id_env", "FALCON_CLIENT_ID")
     print("=" * 70)
     print("  EXCLUSION AUDITOR - CrowdStrike read-scope pre-check (read-only)")
     print(f"  cloud: {cloud}  ({base_url})")
-    print(f"  client id: {_mask(creds['client_id'])}")
+    # Show which env var supplied the credential, never the credential value itself.
+    print(f"  credentials: from env {id_env}")
     if probe_cid:
         print(f"  member_cid: {probe_cid}")
     print("=" * 70)
